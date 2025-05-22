@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>カリキュラム達成日カレンダー</title>
+  <style>
+    table {
+      border-collapse: collapse;
+      width: 100%;
+    }
+    th, td {
+      border: 1px solid #aaa;
+      padding: 8px;
+      text-align: center;
+    }
+    th {
+      background-color: #f0f0f0;
+    }
+    .past {
+      background-color: #ccc;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+  <h1>カリキュラム達成予定日カレンダー</h1>
+
+  <label>入学日: <input type="date" id="startDate"></label><br><br>
+  <label>休学日数（Freeze日数）: <input type="number" id="freezeDays" value="0"> 日</label><br><br>
+  <label>その他の調整日数: <input type="number" id="adjustDays" value="0"> 日</label><br><br>
+  <label><input type="checkbox" id="showRemaining"> 残り日数を表示</label><br><br>
+  <button onclick="generateTable()">表示</button>
+
+  <div id="tableContainer"></div>
+
+  <script>
+    const paceData = {
+      8:   [8, 32, 54, 90, 141, 212, 244],
+      12:  [13, 48, 81, 134, 211, 318, 365],
+      15:  [18, 60, 101, 168, 264, 398, 457],
+      18:  [24, 72, 121, 201, 316, 478, 548],
+      22:  [30, 88, 148, 246, 387, 584, 670],
+      24:  [45, 118, 178, 306, 447, 644, 730]
+    };
+
+    const milestoneLabels = [
+      "Milestone 0: Libft",
+      "Milestone 1: ft_printf...",
+      "Milestone 2: ...",
+      "Milestone 3: minishell",
+      "Milestone 4: ...",
+      "Milestone 5: webserv",
+      "Milestone 6: ft_transcendence"
+    ];
+
+    function generateTable() {
+      const startDateInput = document.getElementById("startDate").value;
+      const freezeDays = parseInt(document.getElementById("freezeDays").value) || 0;
+      const adjustDays = parseInt(document.getElementById("adjustDays").value) || 0;
+      const showRemaining = document.getElementById("showRemaining").checked;
+      const totalOffset = freezeDays + adjustDays;
+
+      const container = document.getElementById("tableContainer");
+      container.innerHTML = "";
+
+      if (!startDateInput) {
+        alert("入学日を入力してください。");
+        return;
+      }
+
+      const startDate = new Date(startDateInput);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      let table = "<table><thead><tr><th>Milestone</th>";
+      for (const pace in paceData) {
+        table += `<th>ペース${pace}</th>`;
+      }
+      table += "</tr></thead><tbody>";
+
+      for (let i = 0; i < milestoneLabels.length; i++) {
+        table += `<tr><td>${milestoneLabels[i]}</td>`;
+        for (const pace in paceData) {
+          const rawDays = paceData[pace][i];
+          const adjustedDays = rawDays - 1 + totalOffset;
+
+          const targetDate = new Date(startDate);
+          targetDate.setDate(startDate.getDate() + adjustedDays);
+
+          const isPast = targetDate < today;
+          const formattedDate = targetDate.toLocaleDateString("ja-JP");
+          const cellClass = isPast ? "past" : "";
+
+          let cellText = formattedDate;
+          if (showRemaining) {
+            const remainingDays = Math.ceil((targetDate - today) / (1000 * 60 * 60 * 24));
+            cellText += `<br>(あと ${remainingDays} 日)`;
+          }
+
+          table += `<td class="${cellClass}">${cellText}</td>`;
+        }
+        table += "</tr>";
+      }
+
+      table += "</tbody></table>";
+      container.innerHTML = table;
+    }
+  </script>
+</body>
+</html>
