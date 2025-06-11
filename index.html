@@ -29,7 +29,6 @@
   <label>休学日数（Freeze日数）: <input type="number" id="freezeDays" value="0"> 日</label><br><br>
   <label>その他の調整日数: <input type="number" id="adjustDays" value="0"> 日</label><br><br>
   <label><input type="checkbox" id="showRemaining"> 残り日数を表示</label><br><br>
-  <button onclick="generateTable()">表示</button>
 
   <div id="tableContainer"></div>
 
@@ -60,11 +59,15 @@
       const showRemaining = document.getElementById("showRemaining").checked;
       const totalOffset = freezeDays + adjustDays;
 
+      // URLパラメーターを更新
+      updateUrlParams();
+
       const container = document.getElementById("tableContainer");
       container.innerHTML = "";
 
+      // 入学日が設定されていない場合は「--」で表を生成
       if (!startDateInput) {
-        alert("入学日を入力してください。");
+        generateEmptyTable();
         return;
       }
 
@@ -105,6 +108,106 @@
       table += "</tbody></table>";
       container.innerHTML = table;
     }
+
+    // 入学日が設定されていない場合の「--」表示用関数
+    function generateEmptyTable() {
+      const container = document.getElementById("tableContainer");
+      
+      let table = "<table><thead><tr><th>Milestone</th>";
+      for (const pace in paceData) {
+        table += `<th>ペース${pace}</th>`;
+      }
+      table += "</tr></thead><tbody>";
+
+      for (let i = 0; i < milestoneLabels.length; i++) {
+        table += `<tr><td>${milestoneLabels[i]}</td>`;
+        for (const pace in paceData) {
+          table += `<td>--</td>`;
+        }
+        table += "</tr>";
+      }
+
+      table += "</tbody></table>";
+      container.innerHTML = table;
+    }
+
+    // URLパラメーターを現在の設定値に更新する関数
+    function updateUrlParams() {
+      const startDate = document.getElementById("startDate").value;
+      const freezeDays = document.getElementById("freezeDays").value;
+      const adjustDays = document.getElementById("adjustDays").value;
+      const showRemaining = document.getElementById("showRemaining").checked;
+
+      const params = new URLSearchParams();
+      
+      if (startDate) params.set('startDate', startDate);
+      if (freezeDays && freezeDays !== '0') params.set('freezeDays', freezeDays);
+      if (adjustDays && adjustDays !== '0') params.set('adjustDays', adjustDays);
+      if (showRemaining) params.set('showRemaining', 'true');
+
+      const newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
+      window.history.replaceState({}, '', newUrl);
+    }
+
+    // URLパラメーターを解析して設定値を適用する関数
+    function loadFromUrlParams() {
+      const urlParams = new URLSearchParams(window.location.search);
+      
+      const startDate = urlParams.get('startDate');
+      const freezeDays = urlParams.get('freezeDays');
+      const adjustDays = urlParams.get('adjustDays');
+      const showRemaining = urlParams.get('showRemaining');
+      const autoGenerate = urlParams.get('auto');
+
+      if (startDate) {
+        document.getElementById('startDate').value = startDate;
+      }
+      
+      if (freezeDays) {
+        document.getElementById('freezeDays').value = freezeDays;
+      }
+      
+      if (adjustDays) {
+        document.getElementById('adjustDays').value = adjustDays;
+      }
+      
+      if (showRemaining === 'true') {
+        document.getElementById('showRemaining').checked = true;
+      }
+
+      // autoパラメーターが true の場合、自動で表を生成
+      if (autoGenerate === 'true' && startDate) {
+        generateTable();
+      }
+    }
+
+    // 入力値変更時にURLを更新し、表を自動更新するイベントリスナーを追加
+    function setupEventListeners() {
+      document.getElementById('startDate').addEventListener('change', function() {
+        updateUrlParams();
+        generateTable();
+      });
+      document.getElementById('freezeDays').addEventListener('input', function() {
+        updateUrlParams();
+        generateTable();
+      });
+      document.getElementById('adjustDays').addEventListener('input', function() {
+        updateUrlParams();
+        generateTable();
+      });
+      document.getElementById('showRemaining').addEventListener('change', function() {
+        updateUrlParams();
+        generateTable();
+      });
+    }
+
+    // ページ読み込み時にURLパラメーターを適用とイベントリスナーを設定
+    window.addEventListener('load', function() {
+      loadFromUrlParams();
+      setupEventListeners();
+      // 常に表を表示（パラメーターがない場合は--で表示）
+      generateTable();
+    });
   </script>
 </body>
 </html>
