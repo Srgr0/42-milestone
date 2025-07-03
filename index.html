@@ -29,6 +29,9 @@
   <label>休学日数（Freeze日数）: <input type="number" id="freezeDays" value="0"> 日</label><br><br>
   <label>その他の調整日数: <input type="number" id="adjustDays" value="0"> 日</label><br><br>
   <label><input type="checkbox" id="showRemaining"> 残り日数を表示</label><br><br>
+  <label>メモ:<br>
+    <textarea id="memo" rows="1" style="width:100%;box-sizing:border-box;"></textarea>
+  </label><br><br>
 
   <div id="tableContainer"></div>
 
@@ -131,19 +134,27 @@
       container.innerHTML = table;
     }
 
+    // テキストエリアの高さを内容に合わせて調整
+    function autoResizeTextarea(el) {
+      el.style.height = 'auto';
+      el.style.height = el.scrollHeight + 'px';
+    }
+
     // URLパラメーターを現在の設定値に更新する関数
     function updateUrlParams() {
       const startDate = document.getElementById("startDate").value;
       const freezeDays = document.getElementById("freezeDays").value;
       const adjustDays = document.getElementById("adjustDays").value;
       const showRemaining = document.getElementById("showRemaining").checked;
+      const memo = document.getElementById("memo").value;
 
       const params = new URLSearchParams();
-      
+
       if (startDate) params.set('startDate', startDate);
       if (freezeDays && freezeDays !== '0') params.set('freezeDays', freezeDays);
       if (adjustDays && adjustDays !== '0') params.set('adjustDays', adjustDays);
       if (showRemaining) params.set('showRemaining', 'true');
+      if (memo) params.set('memo', memo);
 
       const newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
       window.history.replaceState({}, '', newUrl);
@@ -157,6 +168,7 @@
       const freezeDays = urlParams.get('freezeDays');
       const adjustDays = urlParams.get('adjustDays');
       const showRemaining = urlParams.get('showRemaining');
+      const memo = urlParams.get('memo');
       const autoGenerate = urlParams.get('auto');
 
       if (startDate) {
@@ -173,6 +185,12 @@
       
       if (showRemaining === 'true') {
         document.getElementById('showRemaining').checked = true;
+      }
+
+      if (memo) {
+        const memoEl = document.getElementById('memo');
+        memoEl.value = memo;
+        autoResizeTextarea(memoEl);
       }
 
       // autoパラメーターが true の場合、自動で表を生成
@@ -199,12 +217,17 @@
         updateUrlParams();
         generateTable();
       });
+      document.getElementById('memo').addEventListener('input', function() {
+        autoResizeTextarea(this);
+        updateUrlParams();
+      });
     }
 
     // ページ読み込み時にURLパラメーターを適用とイベントリスナーを設定
     window.addEventListener('load', function() {
       loadFromUrlParams();
       setupEventListeners();
+      autoResizeTextarea(document.getElementById('memo'));
       // 常に表を表示（パラメーターがない場合は--で表示）
       generateTable();
     });
